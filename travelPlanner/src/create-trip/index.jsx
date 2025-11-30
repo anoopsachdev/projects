@@ -1,23 +1,38 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Autocomplete, useJsApiLoader } from "@react-google-maps/api";
+import React, { useState, useEffect } from "react";
+import { useJsApiLoader, Autocomplete } from "@react-google-maps/api";
 import conf from "../conf/conf.js";
+import { useGoogleLogin } from "@react-oauth/google";
+import axios from "axios";
+import { FcGoogle } from "react-icons/fc";
 
 import { Input } from "@/components/ui/input.jsx";
 import { AI_PROMPT, SelectBudgetOptions, SelectTravelesList } from "@/constants/options.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import { toast } from "sonner";
 import { chatSession } from "@/services/AIModal.jsx";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
 function CreateTrip() {
-  // ----------------------------
-  // 1️⃣ ALL HOOKS MUST COME FIRST 
-  // ----------------------------
+  // 1️⃣ ALL HOOKS MUST BE AT THE TOP LEVEL
   const [placeAutocomplete, setPlaceAutocomplete] = useState(null);
   const [formData, setFormData] = useState({});
+  const [openDialog, setOpenDialog] = useState(false);
 
-  // Load Google Maps (must be BEFORE any return)
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: conf.googlePlaceApiKey,
     libraries: ["places"],
+  });
+
+  // Define login hook HERE, before any returns
+  const login = useGoogleLogin({
+    onSuccess: (codeResponse) => GetUserProfile(codeResponse),
+    onError: (error) => console.log(error),
   });
 
   // DEBUG (safe)
@@ -25,16 +40,39 @@ function CreateTrip() {
     console.log(formData);
   }, [formData]);
 
-  // ----------------------------
-  // 2️⃣ SINGLE EARLY RETURN ONLY
-  // ----------------------------
-  if (!isLoaded) {
-    return <div>Loading Google Maps…</div>;
-  }
+  // 2️⃣ HELPER FUNCTIONS
+  const GetUserProfile = (tokenInfo) => {
+    axios
+      .get(
+        `https://www.googleapis.com/oauth2/v1/userinfo?access_token=${tokenInfo?.access_token}`,
+        {
+          headers: {
+            Authorization: `Bearer ${tokenInfo?.access_token}`,
+            Accept: "application/json",
+          },
+        }
+      )
+      .then((resp) => {
+        console.log(resp);
+        localStorage.setItem("user", JSON.stringify(resp.data));
+        setOpenDialog(false);
+        OnGenerateTrip();
+      });
+  };
 
-  // ----------------------------
-  // 3️⃣ FUNCTIONS (safe)
-  // ----------------------------
+   const SaveAiTrip = async (TripData) => {
+     setLoading(true);
+     const user = JSON.parse(localStorage.getItem("user"));
+     const docId = Date.now().toString();
+     await setDoc(doc(db, "AITrips", docId), {
+       userChoice: formData,
+       tripData: JSON.parse(TripData),
+       userEmail: user?.email,
+       id: docId,
+     });
+     navigate("/view-trip/" + docId);
+   };
+
   const handleInputChange = (name, value) => {
     if (name === "noOfDays" && value > 5) {
       console.log("Max days exceeded (5)");
@@ -43,7 +81,12 @@ function CreateTrip() {
     setFormData({ ...formData, [name]: value });
   };
 
-  const OnGenerateTrip = async() => {
+  const OnGenerateTrip = async () => {
+    const user = localStorage.getItem("user");
+    if (!user) {
+      setOpenDialog(true);
+      return;
+    }
     if (
       !formData.noOfDays ||
       !formData.location ||
@@ -51,25 +94,31 @@ function CreateTrip() {
       !formData.traveler
     ) {
       toast("Please fill all details.");
-      console.log("Missing fields");
       return;
     }
-    console.log(formData);
 
     const FINAL_PROMPT = AI_PROMPT
-      .replace("{location}",formData?.location?.label)
-      .replace("{totalDays}", formData?.noOfDays)
-      .replace("{traveler}", formData?.noOfPeople)
-      .replace("{budget}", formData?.budget)
-      .replace("{totalDays}", formData?.noOfDays);
+      .replaceAll("{location}", formData?.location?.name || formData?.location?.formatted_address)
+      .replaceAll("{totalDays}", formData?.noOfDays)
+      .replaceAll("{traveler}", formData?.traveler)
+      .replaceAll("{budget}", formData?.budget);
 
-    const result = await chatSession.sendMessage(FINAL_PROMPT);
-    console.log(result?.response.text());
+    try {
+      console.log("Sending prompt to AI...", FINAL_PROMPT);
+      const result = await chatSession.sendMessage(FINAL_PROMPT);
+      console.log("Generated Text:", result.response.text());
+    } catch (error) {
+      console.error("🚨 AI Generation Error:", error);
+      toast("AI Error: Check console for details");
+    }
   };
 
-  // ----------------------------
-  // 4️⃣ RENDER (SAFE)
-  // ----------------------------
+  // 3️⃣ CONDITIONAL RENDER (Only after all hooks are declared)
+  if (!isLoaded) {
+    return <div>Loading Google Maps…</div>;
+  }
+
+  // 4️⃣ MAIN RENDER
   return (
     <div className="sm:px-10 md:px-32 lg:px-56 xl:px-72 px-5 mt-10">
       <h2 className="font-bold text-3xl">
@@ -84,7 +133,6 @@ function CreateTrip() {
         {/* DESTINATION */}
         <div>
           <h2 className="text-xl my-3 font-medium">Destination</h2>
-
           <Autocomplete
             onLoad={(ac) => setPlaceAutocomplete(ac)}
             onPlaceChanged={() => {
@@ -135,7 +183,9 @@ function CreateTrip() {
                 key={i}
                 onClick={() => handleInputChange("traveler", t.people)}
                 className={`p-4 border rounded-lg cursor-pointer hover:shadow-lg ${
-                  formData.traveler === t.people ? "shadow-lg border-black" : ""
+                  formData.traveler === t.people
+                    ? "shadow-lg border-black"
+                    : ""
                 }`}
               >
                 <h2 className="text-3xl">{t.icon}</h2>
@@ -156,6 +206,34 @@ function CreateTrip() {
           Generate Trip
         </Button>
       </div>
+
+      {/* DIALOG */}
+      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <img src="/logo.svg" className="h-10 w-10" alt="TripMate Logo" />
+              <span className="font-bold text-xl mt-1">TripMate</span>
+            </div>
+            <DialogTitle className="font-bold text-lg text-center">
+              Sign In With Google
+            </DialogTitle>
+            <DialogDescription className="text-center">
+              Please sign in to the App with Google authentication securely.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col items-center gap-5 mt-4">
+            <Button
+              className="w-full mt-5 gap-2"
+              onClick={() => login()}
+            >
+              <FcGoogle className="h-6 w-6" />
+              Sign in with Google
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

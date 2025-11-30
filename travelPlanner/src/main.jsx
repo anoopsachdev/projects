@@ -7,8 +7,8 @@ import { RouterProvider } from 'react-router'
 import CreateTrip from './create-trip'
 import Header from './components/custom/Header'
 import { Toaster } from 'sonner'
-
-
+import conf from "./conf/conf.js";
+import { GoogleOAuthProvider } from '@react-oauth/google'
 const router = createBrowserRouter([
   {
     path: '/',
@@ -22,8 +22,10 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
+    <GoogleOAuthProvider clientId={conf.googleAuthClientId}>
     <Header/>
-    <Toaster></Toaster>
+    <Toaster/>
     <RouterProvider router = {router}/>
+    </GoogleOAuthProvider>
   </StrictMode>,
 )
