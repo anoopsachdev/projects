@@ -2,17 +2,15 @@ import { GetPlaceDetails } from "@/services/GlobalApi";
 import { PHOTO_REF_URL } from "@/constants/options";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { FaTrash } from "react-icons/fa"; // Importing Trash Icon
 
-const UserTripCardItem = ({ trip }) => {
+const UserTripCardItem = ({ trip, onDelete }) => {
   const [photoUrl, setPhotoUrl] = useState();
 
   useEffect(() => {
-    // 1. Try to use the saved URL first (New Trips)
     if (trip?.userChoice?.location?.photoUrl) {
       setPhotoUrl(trip.userChoice.location.photoUrl);
-    } 
-    // 2. If no saved URL, fetch it (Old Trips)
-    else if (trip?.userChoice?.location?.label) {
+    } else if (trip?.userChoice?.location?.label) {
       GetPlacePhoto();
     }
   }, [trip]);
@@ -34,24 +32,35 @@ const UserTripCardItem = ({ trip }) => {
   };
 
   return (
-    <Link to={"/view-trip/" + trip?.id}>
-      <div className="hover:scale-105 transition-all hover:shadow-md">
-        <img
-          className="object-cover rounded-xl mx-auto w-80 h-64"
-          src={photoUrl || "/placeholder-image.jpg"}
-          alt={trip?.userChoice?.location?.label}
-        />
-        <div className="mt-2 px-2">
-          <h2 className="font-bold text-lg">
-            {trip?.userChoice?.location?.label}
-          </h2>
-          <h2 className="text-sm text-gray-500">
-            {trip?.userChoice?.noOfDays} days trip with "
-            {trip?.userChoice?.budget}" budget.
-          </h2>
+    <div className="relative hover:scale-105 transition-all hover:shadow-md rounded-xl group">
+      <Link to={"/view-trip/" + trip?.id}>
+        <div>
+          <img
+            className="object-cover rounded-xl mx-auto w-80 h-64"
+            src={photoUrl || "/placeholder-image.jpg"}
+            alt={trip?.userChoice?.location?.label}
+          />
+          <div className="mt-2 px-2">
+            <h2 className="font-bold text-lg">
+              {trip?.userChoice?.location?.label}
+            </h2>
+            <h2 className="text-sm text-gray-500">
+              {trip?.userChoice?.noOfDays} days trip with "
+              {trip?.userChoice?.budget}" budget.
+            </h2>
+          </div>
         </div>
-      </div>
-    </Link>
+      </Link>
+
+      {/* Delete Button */}
+      <button 
+        onClick={() => onDelete(trip.id)}
+        className="absolute top-2 right-2 bg-red-500 p-2 rounded-full text-white shadow-lg hover:bg-red-600 transition-all opacity-0 group-hover:opacity-100"
+        title="Delete Trip"
+      >
+        <FaTrash size={14}/>
+      </button>
+    </div>
   );
 };
 
