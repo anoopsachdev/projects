@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import {
   Popover,
@@ -15,6 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import axios from "axios";
+import { FcGoogle } from "react-icons/fc";
 function Header() {
   const user = JSON.parse(localStorage.getItem("user"));
   const [openDialog, setOpenDialog] = useState(false);
@@ -47,14 +48,14 @@ function Header() {
     onError: (error) => console.log(error),
   });
   return (
-    <div className='p-3 shadow-sm flex justify-between items-center px-5'>
-      <img src="/logo.svg" alt="TripMate logo" className='h-12 w-auto'/>
+    <div className="p-3 shadow-sm flex justify-between items-center px-5">
+      <img src="/logo.svg" alt="TripMate logo" className="h-12 w-auto" />
       {/* <div>
         <Button className="bg-black text-white hover:bg-gray-800">Sign in</Button>
       </div> */}
       {user ? (
         <div className="flex items-cetner gap-x-3">
-          <a href = "/my-trip">
+          <a href="/my-trip">
             <Button variant="outline" className="rounded-full">
               My Trips
             </Button>
@@ -81,23 +82,29 @@ function Header() {
         <Button onClick={() => setOpenDialog(true)}>Sign in</Button>
       )}
       <Dialog open={openDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Sign In</DialogTitle>
-            <DialogDescription>
-              <div className="flex flex-col items-center">
-                <img src="/logo.png" alt="Logo" className="w-20 mb-4" />
-                <span>Sign in with Google Authentication securely</span>
-                <Button onClick={login} className="w-full mt-5">
-                  Sign in with Google
-                </Button>
-              </div>
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <img src="/logo.svg" className="h-10 w-10" alt="TripMate Logo" />
+              <span className="font-bold text-xl mt-1">TripMate</span>
+            </div>
+            <DialogTitle className="font-bold text-lg text-center">
+              Sign In With Google
+            </DialogTitle>
+            <DialogDescription className="text-center">
+              Please sign in to the App with Google authentication securely.
             </DialogDescription>
           </DialogHeader>
+          <div className="flex flex-col items-center gap-5 mt-4">
+            <Button className="w-full mt-5 gap-2" onClick={() => login()}>
+              <FcGoogle className="h-6 w-6" />
+              Sign in with Google
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }
 
 export default Header

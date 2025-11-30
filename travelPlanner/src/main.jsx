@@ -10,6 +10,7 @@ import { Toaster } from 'sonner'
 import conf from "./conf/conf.js";
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import ViewTrip from './view-trip/[tripId]'
+import MyTrips from './my-trips'
 const router = createBrowserRouter([
   {
     path: '/',
