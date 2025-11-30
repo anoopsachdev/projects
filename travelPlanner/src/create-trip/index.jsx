@@ -88,6 +88,18 @@ const SaveAiTrip = async (TripData) => {
         if (parsedTripData.hotels) delete parsedTripData.hotels;
       }
 
+      // --- Restaurant Image Fetching (NEW) ---
+      const restaurantList = parsedTripData.restaurants || [];
+      if (restaurantList.length > 0) {
+        const updatedRestaurants = await Promise.all(
+          restaurantList.map(async (restaurant) => {
+            const photoUrl = await fetchPhotoUrl(restaurant.name);
+            return { ...restaurant, imageUrl: photoUrl };
+          })
+        );
+        parsedTripData.restaurants = updatedRestaurants;
+      }
+      
       await setDoc(doc(db, "AITrips", docId), {
         userChoice: formData,
         tripData: parsedTripData,
@@ -172,6 +184,9 @@ const SaveAiTrip = async (TripData) => {
           <h2 className="text-xl my-3 font-medium">Destination</h2>
           <Autocomplete
             onLoad={(ac) => setPlaceAutocomplete(ac)}
+            options={{
+              types: ['(regions)'] // Restricts results to Cities, Countries, and States
+            }}
             onPlaceChanged={() => {
               const place = placeAutocomplete.getPlace();
               // OPTIMIZATION: Get the photo URL immediately from the Autocomplete result

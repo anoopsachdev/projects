@@ -58,9 +58,14 @@ export const SelectBudgetOptions = [
 export const AI_PROMPT = `
   Generate a travel plan for the destination: {location} for {totalDays} days. 
   Traveler type: {traveler}, with a {budget} budget. 
-  Provide a list of hotel options including the name, address, and the most recent image URL (ensure the URL is working), geo coordinates, rating, and descriptions. 
-  Suggest a daily itinerary with place names, details, image URLs, geo coordinates, ticket pricing, ratings, and travel time for each location for {totalDays} days, including the best time to visit. 
-  Output in JSON format.
+  
+  1. Hotel Options: Provide exactly 3 options.
+  2. Itinerary: Suggest a daily plan for {totalDays} days.
+  3. Recommended Restaurants: Provide exactly 4 options.
+     Categorize them (e.g., Fine Dining, Authentic).
+     Fields required: Name, Address, Rating, Category, Description, "Veg Recommendations" (max 2 items), "Non-Veg Recommendations" (max 2 items).
+
+  IMPORTANT: Keep descriptions concise. Output strictly in valid JSON format only.
 `;
 
 // Add this to the bottom of src/constants/options.jsx

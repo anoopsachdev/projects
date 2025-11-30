@@ -7,6 +7,7 @@ import InfoSection from "../components/InfoSection";
 import Hotels from "../components/Hotels";
 import Itinerary from "../components/Itinerary";
 import Footer from "@/components/custom/Footer";
+import Restaurants from "../components/Restaurants"; // Import the new component
 const ViewTrip = () => {
   const { tripId } = useParams();
   const [trip, setTrip] = useState([]);
@@ -39,6 +40,10 @@ const ViewTrip = () => {
       {/* Recommended Hotels */}
       <Hotels trip={trip} />
       {/* Daily Plan */}
+      
+      {/* Recommended Restaurants (New Section) */}
+      <Restaurants trip={trip} />
+
       <Itinerary trip={trip} />
       {/* Footer (not necessary) */}
       <Footer/>
