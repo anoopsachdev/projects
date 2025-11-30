@@ -13,7 +13,8 @@ const Itinerary = ({ trip }) => {
         {trip?.tripData?.itinerary.map((item, i) => (
           <div
             key={i}
-            className="itinerary-card p-4 bg-white rounded-lg shadow-lg"
+            className="itinerary-card p-4 bg-white rounded-lg shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-700"
+            style={{ animationDelay: `${i * 100}ms` }}
           >
             <h3 className="text-2xl font-semibold mb-4">{item?.day}</h3>
             <div className="space-y-6">
