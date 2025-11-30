@@ -1,52 +1,37 @@
-import { PHOTO_REF_URL } from "@/constants/options";
-import { GetPlaceDetails } from "@/services/GlobalApi";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import { CiStar } from "react-icons/ci";
+
 const HotelCardItem = ({ h }) => {
-  const [photoUrl, setPhotoUrl] = useState();
-  useEffect(() => {
-    h && GetPlacePhoto();
-  }, [h]);
-
-  const GetPlacePhoto = async () => {
-    const data = {
-      textQuery: h?.name,
-    };
-    const result = await GetPlaceDetails(data).then((resp) => {
-      // 👇 CHANGED: Use [0] instead of [1]
-      const photoName = resp.data.places[0]?.photos?.[0]?.name;
-
-      if (photoName) {
-        const PhotoUrl = PHOTO_REF_URL.replace("{NAME}", photoName);
-        setPhotoUrl(PhotoUrl);
-      }
-    });
-  };
   return (
-    <div>
-      <Link
-        to={
-          "https://www.google.com/maps/search/?api=1&query=" +
-          h?.name +
-          ", " +
-          h?.address
-        }
-        target="_blank"
-      >
-        <div className="flex flex-col items-center justify-center">
-          <img className="w-80 h-52 rounded-md" src={photoUrl} alt={h?.name} />
-          <div className="flex w-full items-center justify-between px-8 mt-2">
-            <div className="font-bold">{h.name}</div>
-            <div className="flex items-center">
-              {h.rating}
-              <CiStar />
-            </div>
+    <Link
+      to={
+        "https://www.google.com/maps/search/?api=1&query=" +
+        h?.name +
+        "," +
+        h?.address
+      }
+      target="_blank"
+    >
+      <div className="flex flex-col items-center justify-center hover:scale-105 transition-all cursor-pointer">
+        <img 
+          className="w-80 h-52 rounded-md object-cover" 
+          // Use the fetched image, fallback to AI's image, fallback to placeholder
+          src={h?.hotelImageUrl || h?.imageUrl || "/placeholder.jpg"} 
+          alt={h?.name} 
+        />
+        <div className="flex w-full items-center justify-between px-8 mt-2">
+          <div className="font-bold">{h.name}</div>
+          <div className="flex items-center">
+            {h.rating}
+            <CiStar className="text-yellow-500" />
           </div>
-          <div className=" w-full px-8 my-1 text-md">{h.address}</div>
         </div>
-      </Link>
-    </div>
+        <div className="w-full px-8 my-1 text-md text-gray-500 truncate">
+          {h.address}
+        </div>
+      </div>
+    </Link>
   );
 };
 

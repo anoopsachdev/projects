@@ -6,7 +6,7 @@ import axios from "axios";
 import { FcGoogle } from "react-icons/fc";
 
 import { Input } from "@/components/ui/input.jsx";
-import { AI_PROMPT, SelectBudgetOptions, SelectTravelesList } from "@/constants/options.jsx";
+import { AI_PROMPT, SelectBudgetOptions, SelectTravelesList, PHOTO_REF_URL } from "@/constants/options.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import { toast } from "sonner";
 import { chatSession } from "@/services/AIModal.jsx";
@@ -20,8 +20,9 @@ import {
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "@/services/firebaseConfig.jsx";
 import { useNavigate } from "react-router-dom";
+import { GetPlaceDetails } from "@/services/GlobalApi.jsx"; // Import API helper
+
 function CreateTrip() {
-  // 1️⃣ ALL HOOKS MUST BE AT THE TOP LEVEL
   const [placeAutocomplete, setPlaceAutocomplete] = useState(null);
   const [formData, setFormData] = useState({});
   const [openDialog, setOpenDialog] = useState(false);
@@ -32,18 +33,11 @@ function CreateTrip() {
     libraries: ["places"],
   });
 
-  // Define login hook HERE, before any returns
   const login = useGoogleLogin({
     onSuccess: (codeResponse) => GetUserProfile(codeResponse),
     onError: (error) => console.log(error),
   });
 
-  // DEBUG (safe)
-  useEffect(() => {
-    console.log(formData);
-  }, [formData]);
-
-  // 2️⃣ HELPER FUNCTIONS
   const GetUserProfile = (tokenInfo) => {
     axios
       .get(
@@ -56,35 +50,77 @@ function CreateTrip() {
         }
       )
       .then((resp) => {
-        console.log(resp);
         localStorage.setItem("user", JSON.stringify(resp.data));
         setOpenDialog(false);
         OnGenerateTrip();
       });
   };
 
-   const SaveAiTrip = async (TripData) => {
-     setLoading(true);
-     const user = JSON.parse(localStorage.getItem("user"));
-     const docId = Date.now().toString();
-    // 👇 ADD THIS: Clean the data in case AI adds markdown
-     let cleanData = TripData;
-     if (typeof TripData === 'string') {
-        cleanData = TripData.replace('```json', '').replace('```', '');
-     }
-     await setDoc(doc(db, "AITrips", docId), {
-       userChoice: formData,
-       tripData: JSON.parse(cleanData),
-       userEmail: user?.email,
-       id: docId,
-     });
-     setLoading(false);
-     navigate("/view-trip/" + docId);
-   };
+const SaveAiTrip = async (TripData) => {
+    setLoading(true);
+    const user = JSON.parse(localStorage.getItem("user"));
+    const docId = Date.now().toString();
+
+    try {
+      // 1. Parse JSON safely
+      let cleanData = TripData;
+      if (typeof TripData === "string") {
+        const jsonMatch = TripData.match(/\{[\s\S]*\}/);
+        cleanData = jsonMatch ? jsonMatch[0] : TripData;
+      }
+      let parsedTripData = JSON.parse(cleanData);
+
+      // 2. Handle "hotel" vs "hotels" mismatch
+      // The AI might return 'hotels' (plural), but our app expects 'hotel'
+      const hotelList = parsedTripData.hotel || parsedTripData.hotels || [];
+      
+      // 3. Fetch images for the hotels
+      if (hotelList.length > 0) {
+        const updatedHotels = await Promise.all(
+          hotelList.map(async (hotel) => {
+            const photoUrl = await fetchPhotoUrl(hotel.name);
+            return { ...hotel, hotelImageUrl: photoUrl };
+          })
+        );
+        // Standardize the key to 'hotel'
+        parsedTripData.hotel = updatedHotels;
+        // Remove the plural key if it exists to avoid confusion
+        if (parsedTripData.hotels) delete parsedTripData.hotels;
+      }
+
+      await setDoc(doc(db, "AITrips", docId), {
+        userChoice: formData,
+        tripData: parsedTripData,
+        userEmail: user?.email,
+        id: docId,
+      });
+
+      setLoading(false);
+      navigate("/view-trip/" + docId);
+    } catch (error) {
+      console.error("Error saving trip:", error);
+      toast("Error generating trip. Please try again.");
+      setLoading(false);
+    }
+  };
+
+  // Helper to fetch photo URL using your GlobalApi
+  const fetchPhotoUrl = async (query) => {
+    try {
+      const result = await GetPlaceDetails({ textQuery: query });
+      const photoName = result?.data?.places?.[0]?.photos?.[0]?.name;
+      if (photoName) {
+        return PHOTO_REF_URL.replace("{NAME}", photoName);
+      }
+    } catch (e) {
+      console.log("Could not fetch image for", query);
+    }
+    return "/placeholder.jpg"; // Fallback image
+  };
 
   const handleInputChange = (name, value) => {
     if (name === "noOfDays" && value > 5) {
-      console.log("Max days exceeded (5)");
+      toast("Please enter trip days less than 5");
       return;
     }
     setFormData({ ...formData, [name]: value });
@@ -107,57 +143,48 @@ function CreateTrip() {
     }
     setLoading(true);
     const FINAL_PROMPT = AI_PROMPT
-      .replaceAll("{location}", formData?.location?.label || formData?.location?.address)
+      .replaceAll("{location}", formData?.location?.label)
       .replaceAll("{totalDays}", formData?.noOfDays)
       .replaceAll("{traveler}", formData?.traveler)
       .replaceAll("{budget}", formData?.budget);
 
     try {
-      console.log("Sending prompt to AI...", FINAL_PROMPT);
       const result = await chatSession.sendMessage(FINAL_PROMPT);
-      console.log("Generated Text:", result.response.text());
-      setLoading(false);
       SaveAiTrip(result?.response?.text());
     } catch (error) {
-      console.error("🚨 AI Generation Error:", error);
+      console.error("AI Generation Error:", error);
       toast("AI Error: Check console for details");
+      setLoading(false);
     }
   };
 
-  // 3️⃣ CONDITIONAL RENDER (Only after all hooks are declared)
   if (!isLoaded) {
-    return <div>Loading Google Maps…</div>;
+    return <div>Loading...</div>;
   }
 
-  // 4️⃣ MAIN RENDER
   return (
     <div className="sm:px-10 md:px-32 lg:px-56 xl:px-72 px-5 mt-10">
-      <h2 className="font-bold text-3xl">
-        Tell us your travel preferences🌴🏕️
-      </h2>
-
-      <p className="mt-3 text-gray-500 text-xl">
-        Just provide some basic information…
-      </p>
+      <h2 className="font-bold text-3xl">Tell us your travel preferences🌴🏕️</h2>
+      <p className="mt-3 text-gray-500 text-xl">Just provide some basic information…</p>
 
       <div className="mt-20 flex flex-col gap-9">
-        {/* DESTINATION */}
         <div>
           <h2 className="text-xl my-3 font-medium">Destination</h2>
           <Autocomplete
             onLoad={(ac) => setPlaceAutocomplete(ac)}
             onPlaceChanged={() => {
               const place = placeAutocomplete.getPlace();
-              
-              // ❌ OLD CODE (Caused the crash):
-              // handleInputChange("location", place);
+              // OPTIMIZATION: Get the photo URL immediately from the Autocomplete result
+              const photoUrl = place.photos
+                ? place.photos[0].getUrl({ maxWidth: 1000, maxHeight: 1000 })
+                : null;
 
-              // ✅ NEW CODE (Fixes the crash):
               handleInputChange("location", {
                 label: place.name,
                 address: place.formatted_address,
-                lat: place.geometry.location.lat(), // Extract the number
-                lng: place.geometry.location.lng()  // Extract the number
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng(),
+                photoUrl: photoUrl, // Saving this here prevents API calls later!
               });
             }}
           >
@@ -165,7 +192,9 @@ function CreateTrip() {
           </Autocomplete>
         </div>
 
-        {/* DAYS */}
+        {/* ... Rest of your inputs (Days, Budget, Traveler) ... */}
+        {/* Keeping existing inputs for brevity, paste your Days/Budget/Traveler sections here */}
+        
         <div>
           <h2 className="text-xl my-3 font-medium">Days</h2>
           <Input
@@ -175,7 +204,6 @@ function CreateTrip() {
           />
         </div>
 
-        {/* BUDGET */}
         <div>
           <h2 className="text-xl my-3 font-medium">Budget</h2>
           <div className="grid grid-cols-3 gap-5 mt-5">
@@ -195,7 +223,6 @@ function CreateTrip() {
           </div>
         </div>
 
-        {/* TRAVELERS */}
         <div>
           <h2 className="text-xl my-3 font-medium">Traveling With</h2>
           <div className="grid grid-cols-3 gap-5 mt-5">
@@ -204,9 +231,7 @@ function CreateTrip() {
                 key={i}
                 onClick={() => handleInputChange("traveler", t.people)}
                 className={`p-4 border rounded-lg cursor-pointer hover:shadow-lg ${
-                  formData.traveler === t.people
-                    ? "shadow-lg border-black"
-                    : ""
+                  formData.traveler === t.people ? "shadow-lg border-black" : ""
                 }`}
               >
                 <h2 className="text-3xl">{t.icon}</h2>
@@ -218,42 +243,25 @@ function CreateTrip() {
         </div>
       </div>
 
-      {/* BUTTON */}
       <div className="my-10 justify-end flex">
-        <Button
-          className="bg-black text-white hover:bg-gray-800"
-          onClick={OnGenerateTrip}
-          disabled={loading}
-        >
+        <Button onClick={OnGenerateTrip} disabled={loading} className="bg-black text-white hover:bg-gray-800">
           {loading ? "Generating Trip..." : "Generate Trip"}
         </Button>
       </div>
 
-      {/* DIALOG */}
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent>
           <DialogHeader>
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <img src="/logo.svg" className="h-10 w-10" alt="TripMate Logo" />
-              <span className="font-bold text-xl mt-1">TripMate</span>
-            </div>
-            <DialogTitle className="font-bold text-lg text-center">
-              Sign In With Google
-            </DialogTitle>
-            <DialogDescription className="text-center">
-              Please sign in to the App with Google authentication securely.
+            <DialogDescription>
+              <img src="/logo.svg" />
+              <h2 className="font-bold text-lg mt-7">Sign In With Google</h2>
+              <p>Sign in to the App with Google authentication securely</p>
+              <Button onClick={() => login()} className="w-full mt-5 gap-4">
+                <FcGoogle className="h-7 w-7" />
+                Sign In With Google
+              </Button>
             </DialogDescription>
           </DialogHeader>
-
-          <div className="flex flex-col items-center gap-5 mt-4">
-            <Button
-              className="w-full mt-5 gap-2"
-              onClick={() => login()}
-            >
-              <FcGoogle className="h-6 w-6" />
-              Sign in with Google
-            </Button>
-          </div>
         </DialogContent>
       </Dialog>
     </div>

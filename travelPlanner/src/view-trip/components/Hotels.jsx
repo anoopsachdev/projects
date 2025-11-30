@@ -30,21 +30,26 @@ const Hotels = ({ trip }) => {
       },
     ],
   };
-
+  const hotelList = trip?.tripData?.hotel || trip?.tripData?.hotels || [];
   return (
     <div className="mt-12 mx-auto md:mx-16 lg:mx-32 p-6 rounded-lg shadow-lg">
       <div className="text-4xl font-bold text-center mb-8">
         Hotel Recommendations
       </div>
-      <div className="slider-container">
-        <Slider {...settings}>
-          {trip?.tripData?.hotel?.map((h, i) => (
-            <div key={i} className="p-2">
-              <HotelCardItem h={h} />
-            </div>
-          ))}
-        </Slider>
-      </div>
+      {/* Check if list has items */}
+      {hotelList.length > 0 ? (
+        <div className="slider-container">
+          <Slider {...settings}>
+            {hotelList.map((h, i) => (
+              <div key={i} className="p-2">
+                <HotelCardItem h={h} />
+              </div>
+            ))}
+          </Slider>
+        </div>
+      ) : (
+        <div className="text-center text-gray-500">No hotel recommendations found.</div>
+      )}
     </div>
   );
 };
