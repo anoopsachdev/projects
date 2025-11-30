@@ -9,6 +9,10 @@ import Itinerary from "../components/Itinerary";
 const ViewTrip = () => {
   const { tripId } = useParams();
   const [trip, setTrip] = useState([]);
+  // Add this inside your component
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   // logic to get trip info from firebase
   const GetTripData = async () => {
     const docRef = doc(db, "AITrips", tripId);

@@ -15,13 +15,12 @@ const InfoSection = ({ trip }) => {
       textQuery: trip?.userChoice?.location?.label,
     };
     const result = await GetPlaceDetails(data).then((resp) => {
-      console.log(resp.data.places[0].photos[3].name);
+      const photoName = resp.data.places[0]?.photos[0]?.name;
 
-      const PhotoUrl = PHOTO_REF_URL.replace(
-        "{NAME}",
-        resp.data.places[0].photos[3].name
-      );
-      setPhotoUrl(PhotoUrl);
+      if (photoName) {
+        const PhotoUrl = PHOTO_REF_URL.replace("{NAME}", photoName);
+        setPhotoUrl(PhotoUrl);
+      }
     });
   };
   return (

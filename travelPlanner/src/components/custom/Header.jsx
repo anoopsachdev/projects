@@ -48,7 +48,7 @@ function Header() {
     onError: (error) => console.log(error),
   });
   return (
-    <div className="p-3 shadow-sm flex justify-between items-center px-5">
+    <div className="p-3 shadow-sm flex justify-between items-center px-5 sticky top-0 z-50 backdrop-blur-md bg-white/80 border-b">
       <img src="/logo.svg" alt="TripMate logo" className="h-12 w-auto" />
       {/* <div>
         <Button className="bg-black text-white hover:bg-gray-800">Sign in</Button>

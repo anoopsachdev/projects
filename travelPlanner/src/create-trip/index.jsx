@@ -67,12 +67,18 @@ function CreateTrip() {
      setLoading(true);
      const user = JSON.parse(localStorage.getItem("user"));
      const docId = Date.now().toString();
+    // 👇 ADD THIS: Clean the data in case AI adds markdown
+     let cleanData = TripData;
+     if (typeof TripData === 'string') {
+        cleanData = TripData.replace('```json', '').replace('```', '');
+     }
      await setDoc(doc(db, "AITrips", docId), {
        userChoice: formData,
-       tripData: JSON.parse(TripData),
+       tripData: JSON.parse(cleanData),
        userEmail: user?.email,
        id: docId,
      });
+     setLoading(false);
      navigate("/view-trip/" + docId);
    };
 

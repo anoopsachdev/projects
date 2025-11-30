@@ -14,13 +14,13 @@ const HotelCardItem = ({ h }) => {
       textQuery: h?.name,
     };
     const result = await GetPlaceDetails(data).then((resp) => {
-      console.log(resp.data.places[0].photos[0].name);
+      // 👇 CHANGED: Use [0] instead of [1]
+      const photoName = resp.data.places[0]?.photos?.[0]?.name;
 
-      const PhotoUrl = PHOTO_REF_URL.replace(
-        "{NAME}",
-        resp.data.places[1].photos[1].name
-      );
-      setPhotoUrl(PhotoUrl);
+      if (photoName) {
+        const PhotoUrl = PHOTO_REF_URL.replace("{NAME}", photoName);
+        setPhotoUrl(PhotoUrl);
+      }
     });
   };
   return (
