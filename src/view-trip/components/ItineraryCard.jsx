@@ -8,7 +8,7 @@ import { MdAttachMoney } from "react-icons/md";
 import { Link } from "react-router-dom";
 
 const ItineraryCard = ({ plan }) => {
-  const [photoUrl, setPhotoUrl] = useState("");
+  const [photoUrl, setPhotoUrl] = useState();
 
   useEffect(() => {
     if (plan) {
@@ -45,7 +45,7 @@ const ItineraryCard = ({ plan }) => {
       <div className="flex flex-col bg-white rounded-lg shadow-md overflow-hidden transition-transform transform hover:scale-105 duration-300 itinerary-card">
         <img
           className="w-full h-48 object-cover"
-          src={photoUrl}
+          src={photoUrl || "static.photos/320x240/114"}
           alt={plan.placeName}
         />
         <div className="p-4">

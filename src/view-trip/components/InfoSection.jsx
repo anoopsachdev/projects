@@ -11,6 +11,7 @@ const InfoSection = ({ trip }) => {
   }, [trip]);
 
   const GetPlacePhoto = async () => {
+    if (!trip?.userChoice?.location?.label) return;
     const data = {
       textQuery: trip?.userChoice?.location?.label,
     };

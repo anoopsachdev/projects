@@ -5,7 +5,7 @@ const config = {
   headers: {
     "Content-Type": "application/json",
     "X-Goog-Api-Key": conf.googlePlaceApiKey,
-    "X-Goog-FieldMask": ["places.photos", "places.displayName", "places.id"],
+    "X-Goog-FieldMask": "places.photos,places.displayName,places.id", // ✅ Must be a single string
   },
 };
 

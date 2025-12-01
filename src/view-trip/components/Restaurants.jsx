@@ -64,7 +64,7 @@ const RestaurantCardItem = ({ restaurant }) => {
     >
       <div className="flex flex-col items-center bg-white rounded-lg shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer p-4 h-full border border-gray-100 min-h-[350px]">
         <img
-          src={restaurant?.imageUrl || "/placeholder.jpg"}
+          src={restaurant?.imageUrl}
           alt={restaurant?.name}
           className="w-full h-48 object-cover rounded-md mb-3"
         />
