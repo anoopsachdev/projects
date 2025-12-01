@@ -1,5 +1,7 @@
 # 🌍 TripMate - AI-Powered Travel Planner
 
+[![Vercel](https://img.shields.io/badge/Vercel-Live%20Demo-black?logo=vercel&style=for-the-badge)](https://sachdev-trip-mate.vercel.app/)
+
 **TripMate** is a smart travel planning application that leverages the power of Artificial Intelligence to create personalized travel itineraries. By integrating Google Gemini AI and Google Places API, TripMate generates detailed daily plans, hotel recommendations, and dining suggestions tailored to your budget and travel companions.
 
 ## TripMate Landing page
@@ -27,7 +29,7 @@
 * [Firebase](https://firebase.google.com/) (Firestore & Authentication)
 * [Google Gemini API](https://ai.google.dev/) (AI Model: `gemini-2.5-flash`)
 * [Google Places API](https://developers.google.com/maps/documentation/places/web-service/overview)
-
+* [Vercel](https://vercel.com) (Deployment & Hosting)
 ## 🚀 Getting Started
 
 Follow these instructions to set up the project locally.
