@@ -52,6 +52,10 @@ function CreateTrip() {
       .then((resp) => {
         localStorage.setItem("user", JSON.stringify(resp.data));
         setOpenDialog(false);
+        
+        // 👇 ADD THIS LINE: Notify the Header component to update
+        window.dispatchEvent(new Event('user-auth'));
+        
         OnGenerateTrip();
       });
   };
@@ -265,18 +269,27 @@ const SaveAiTrip = async (TripData) => {
       </div>
 
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogDescription>
-              <img src="/logo.svg" />
-              <h2 className="font-bold text-lg mt-7">Sign In With Google</h2>
-              <p>Sign in to the App with Google authentication securely</p>
-              <Button onClick={() => login()} className="w-full mt-5 gap-4">
-                <FcGoogle className="h-7 w-7" />
-                Sign In With Google
-              </Button>
+            <div className="flex items-center justify-center gap-2 mb-3">
+              {/* Added sizing classes h-10 w-10 so the image isn't huge */}
+              <img src="/logo.svg" className="h-10 w-10" alt="TripMate Logo" />
+              {/* Added the app name text */}
+              <span className="font-bold text-xl mt-1">TripMate</span>
+            </div>
+            <DialogTitle className="font-bold text-lg text-center">
+              Sign In With Google
+            </DialogTitle>
+            <DialogDescription className="text-center">
+              Please sign in to the App with Google authentication securely.
             </DialogDescription>
           </DialogHeader>
+          <div className="flex flex-col items-center gap-5 mt-4">
+            <Button className="w-full mt-5 gap-2" onClick={() => login()}>
+              <FcGoogle className="h-6 w-6" />
+              Sign in with Google
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
