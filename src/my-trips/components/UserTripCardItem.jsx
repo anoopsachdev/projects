@@ -37,7 +37,7 @@ const UserTripCardItem = ({ trip, onDelete }) => {
         <div>
           <img
             className="object-cover rounded-xl mx-auto w-80 h-64"
-            src={photoUrl || "/placeholder-image.jpg"}
+            src={photoUrl}
             alt={trip?.userChoice?.location?.label}
           />
           <div className="mt-2 px-2">
